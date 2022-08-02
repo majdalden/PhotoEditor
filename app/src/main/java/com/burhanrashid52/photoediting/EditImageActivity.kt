@@ -2,12 +2,14 @@ package com.burhanrashid52.photoediting
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -114,6 +116,21 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         //Set Image Dynamically
         mPhotoEditorView?.source?.setImageResource(R.drawable.paris_tower)
+        if (mPhotoEditorView?.source?.drawable == null) {
+            mPhotoEditorView?.source?.setBackgroundColor(
+                ContextCompat.getColor(
+                    this,
+                    R.color.black
+                )
+            )
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                mPhotoEditorView?.source?.background = null
+            } else {
+                mPhotoEditorView?.source?.setBackgroundDrawable(null)
+            }
+        }
+
         mSaveFileHelper = FileSaveHelper(this)
     }
 
@@ -252,7 +269,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
         return FileProvider.getUriForFile(
             this,
-            FILE_PROVIDER_AUTHORITY,
+            getAuthority(applicationContext),
             File(path)
         )
     }
@@ -482,10 +499,14 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     companion object {
         private val TAG = EditImageActivity::class.java.simpleName
-        const val FILE_PROVIDER_AUTHORITY = "com.burhanrashid52.photoediting.fileprovider"
+        private const val FILE_PROVIDER = ".fileprovider"
         private const val CAMERA_REQUEST = 52
         private const val PICK_REQUEST = 53
         const val ACTION_NEXTGEN_EDIT = "action_nextgen_edit"
         const val PINCH_TEXT_SCALABLE_INTENT_KEY = "PINCH_TEXT_SCALABLE"
+
+        fun getAuthority(context: Context): String {
+            return context.packageName + FILE_PROVIDER
+        }
     }
 }

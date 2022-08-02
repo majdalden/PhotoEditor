@@ -13,12 +13,13 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCa
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.GridLayoutManager
-import com.burhanrashid52.photoediting.PhotoApp.Companion.photoApp
 import java.lang.NumberFormatException
 import java.util.ArrayList
 
 class EmojiBSFragment : BottomSheetDialogFragment() {
+
     private var mEmojiListener: EmojiListener? = null
+    private var emojisList = ArrayList<String>()
 
     interface EmojiListener {
         fun onEmojiClick(emojiUnicode: String?)
@@ -39,6 +40,9 @@ class EmojiBSFragment : BottomSheetDialogFragment() {
         super.setupDialog(dialog, style)
         val contentView = View.inflate(context, R.layout.fragment_bottom_sticker_emoji_dialog, null)
         dialog.setContentView(contentView)
+
+        emojisList = getEmojis(activity?.applicationContext)
+
         val params = (contentView.parent as View).layoutParams as CoordinatorLayout.LayoutParams
         val behavior = params.behavior
         if (behavior != null && behavior is BottomSheetBehavior<*>) {
@@ -88,7 +92,7 @@ class EmojiBSFragment : BottomSheetDialogFragment() {
     }
 
     companion object {
-        private var emojisList = getEmojis(photoApp)
+//        private var emojisList = getEmojis(photoApp)
 
         /**
          * Provide the list of emoji in form of unicode string
