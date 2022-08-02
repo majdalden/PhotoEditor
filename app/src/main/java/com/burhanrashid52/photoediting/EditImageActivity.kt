@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Typeface
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -18,40 +17,33 @@ import android.view.View
 import android.view.animation.AnticipateOvershootInterpolator
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresPermission
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
-import com.burhanrashid52.photoediting.base.BaseActivity
-import ja.burhanrashid52.photoeditor.OnPhotoEditorListener
-import com.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
-import com.burhanrashid52.photoediting.StickerBSFragment.StickerListener
-import com.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
-import ja.burhanrashid52.photoeditor.PhotoEditor
-import ja.burhanrashid52.photoeditor.PhotoEditorView
-import androidx.recyclerview.widget.RecyclerView
-import com.burhanrashid52.photoediting.tools.EditingToolsAdapter
-import com.burhanrashid52.photoediting.filters.FilterViewAdapter
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
-import androidx.recyclerview.widget.LinearLayoutManager
-import ja.burhanrashid52.photoeditor.TextStyleBuilder
-import ja.burhanrashid52.photoeditor.ViewType
-import androidx.core.content.FileProvider
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
+import com.bumptech.glide.Glide
+import com.burhanrashid52.photoediting.EmojiBSFragment.EmojiListener
+import com.burhanrashid52.photoediting.StickerBSFragment.StickerListener
+import com.burhanrashid52.photoediting.base.BaseActivity
 import com.burhanrashid52.photoediting.filters.FilterListener
-import ja.burhanrashid52.photoeditor.SaveSettings
-import ja.burhanrashid52.photoeditor.PhotoEditor.OnSaveListener
-import ja.burhanrashid52.photoeditor.shape.ShapeType
-import ja.burhanrashid52.photoeditor.PhotoFilter
+import com.burhanrashid52.photoediting.filters.FilterViewAdapter
+import com.burhanrashid52.photoediting.tools.EditingToolsAdapter
+import com.burhanrashid52.photoediting.tools.EditingToolsAdapter.OnItemSelected
 import com.burhanrashid52.photoediting.tools.ToolType
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import ja.burhanrashid52.photoeditor.*
+import ja.burhanrashid52.photoeditor.PhotoEditor.OnSaveListener
 import ja.burhanrashid52.photoeditor.shape.ShapeBuilder
+import ja.burhanrashid52.photoeditor.shape.ShapeType
 import java.io.File
 import java.io.IOException
-import java.lang.Exception
-import androidx.annotation.RequiresPermission
-import com.bumptech.glide.Glide
 
 class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickListener,
     PropertiesBSFragment.Properties, ShapeBSFragment.Properties, EmojiListener, StickerListener,
@@ -277,13 +269,46 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     @RequiresPermission(allOf = [Manifest.permission.WRITE_EXTERNAL_STORAGE])
     private fun saveImage() {
         val fileName = System.currentTimeMillis().toString() + ".png"
+        val (created, imageStoryFile) = getCashFilePath(fileName)
         val hasStoragePermission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         ) == PackageManager.PERMISSION_GRANTED
         if (hasStoragePermission /*|| FileSaveHelper.isSdkHigherThan23()*/) {
             showLoading("Saving...")
-            mSaveFileHelper?.createFile(fileName, object : FileSaveHelper.OnFileCreateResult {
+
+            if (created
+                && imageStoryFile.absolutePath.trim().isNotEmpty()
+                && imageStoryFile.exists()
+            ) {
+                val saveSettings = SaveSettings.Builder()
+                    .setClearViewsEnabled(true)
+                    .setTransparencyEnabled(true)
+                    .build()
+
+                mPhotoEditor?.saveAsFile(
+                    imageStoryFile.absolutePath,
+                    saveSettings,
+                    object : OnSaveListener {
+                        override fun onSuccess(imagePath: String) {
+                            mSaveFileHelper?.notifyThatFileIsNowPubliclyAvailable(
+                                contentResolver
+                            )
+                            hideLoading()
+                            showSnackbar("Image Saved Successfully")
+                            mSaveImageUri = Uri.fromFile(imageStoryFile)
+                            mPhotoEditorView?.source?.setImageURI(mSaveImageUri)
+                        }
+
+                        override fun onFailure(exception: Exception) {
+                            hideLoading()
+                            showSnackbar("Failed to save Image")
+                        }
+                    })
+            } else {
+                hideLoading()
+            }
+            /*mSaveFileHelper?.createFile(fileName, object : FileSaveHelper.OnFileCreateResult {
 
                 @RequiresPermission(allOf = [Manifest.permission.WRITE_EXTERNAL_STORAGE])
                 override fun onFileCreateResult(
@@ -322,10 +347,38 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                         error?.let { showSnackbar(error) }
                     }
                 }
-            })
+            })*/
         } else {
             requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
+    }
+
+    private fun getCashFilePath(fileName: String): Pair<Boolean, File> {
+        val imageStoryFile = File(
+            "$cacheDir/ImagesStories/$fileName"
+        )
+        var isCreated = false
+
+        try {
+            val imageFile = File("$cacheDir/ImagesStories")
+            if (!imageFile.exists()) {
+                imageFile.mkdirs()
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+
+        try {
+            isCreated = if (!imageStoryFile.exists()) {
+                imageStoryFile.createNewFile()
+            } else {
+                true
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+
+        return Pair(isCreated, imageStoryFile)
     }
 
     // TODO(lucianocheng): Replace onActivityResult with Result API from Google
