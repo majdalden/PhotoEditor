@@ -1,5 +1,6 @@
 package com.burhanrashid52.photoediting
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -10,15 +11,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.burhanrashid52.photoediting.ColorPickerAdapter.OnColorPickerClickListener
-import kotlin.jvm.JvmOverloads
-import androidx.appcompat.app.AppCompatActivity
 import androidx.annotation.ColorInt
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.burhanrashid52.photoediting.ColorPickerAdapter.OnColorPickerClickListener
+import com.burhanrashid52.photoediting.tools.createColorPickerDialog
+import com.jaredrummler.android.colorpicker.ColorPickerDialog
+import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
+import com.jaredrummler.android.colorpicker.ColorShape
 
 /**
  * Created by Burhanuddin Rashid on 1/16/2018.
@@ -26,6 +31,7 @@ import androidx.fragment.app.DialogFragment
 class TextEditorDialogFragment : DialogFragment() {
     private var mAddTextEditText: EditText? = null
     private var mAddTextDoneTextView: TextView? = null
+    private var textColorIV: ImageView? = null
     private var mInputMethodManager: InputMethodManager? = null
     private var mColorCode = 0
     private var mTextEditorListener: TextEditorListener? = null
@@ -41,8 +47,8 @@ class TextEditorDialogFragment : DialogFragment() {
         if (dialog != null) {
             val width = ViewGroup.LayoutParams.MATCH_PARENT
             val height = ViewGroup.LayoutParams.MATCH_PARENT
-            dialog.window!!.setLayout(width, height)
-            dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window?.setLayout(width, height)
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         }
     }
 
@@ -56,10 +62,13 @@ class TextEditorDialogFragment : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val activity = activity ?: return
+        val arguments = arguments ?: return
         mAddTextEditText = view.findViewById(R.id.add_text_edit_text)
         mInputMethodManager =
-            activity!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager?
         mAddTextDoneTextView = view.findViewById(R.id.add_text_done_tv)
+        textColorIV = view.findViewById(R.id.textColorIV)
 
         //Setup the color picker for text color
         val addTextColorPickerRecyclerView: RecyclerView =
@@ -67,29 +76,36 @@ class TextEditorDialogFragment : DialogFragment() {
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         addTextColorPickerRecyclerView.layoutManager = layoutManager
         addTextColorPickerRecyclerView.setHasFixedSize(true)
-        val colorPickerAdapter = ColorPickerAdapter(activity!!)
+        val colorPickerAdapter = ColorPickerAdapter(activity)
 
         //This listener will change the text color when clicked on any color from picker
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 mColorCode = colorCode
-                mAddTextEditText!!.setTextColor(colorCode)
+                mAddTextEditText?.setTextColor(colorCode)
+                textColorIV?.setBackgroundColor(colorCode)
             }
         })
         addTextColorPickerRecyclerView.adapter = colorPickerAdapter
-        mAddTextEditText!!.setText(arguments!!.getString(EXTRA_INPUT_TEXT))
-        mColorCode = arguments!!.getInt(EXTRA_COLOR_CODE)
-        mAddTextEditText!!.setTextColor(mColorCode)
-        mInputMethodManager!!.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        mAddTextEditText?.setText(arguments.getString(EXTRA_INPUT_TEXT))
+        mColorCode = arguments.getInt(EXTRA_COLOR_CODE)
+        mAddTextEditText?.setTextColor(mColorCode)
+        textColorIV?.setBackgroundColor(mColorCode)
+//        mInputMethodManager?.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        mInputMethodManager?.showSoftInput(view, InputMethodManager.SHOW_FORCED)
 
         //Make a callback on activity when user is done with text editing
-        mAddTextDoneTextView!!.setOnClickListener { onClickListenerView ->
-            mInputMethodManager!!.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
+        mAddTextDoneTextView?.setOnClickListener { onClickListenerView ->
+            mInputMethodManager?.hideSoftInputFromWindow(onClickListenerView.windowToken, 0)
             dismiss()
-            val inputText = mAddTextEditText!!.text.toString()
+            val inputText = mAddTextEditText?.text?.toString() ?: ""
             if (!TextUtils.isEmpty(inputText) && mTextEditorListener != null) {
-                mTextEditorListener!!.onDone(inputText, mColorCode)
+                mTextEditorListener?.onDone(inputText, mColorCode)
             }
+        }
+
+        textColorIV?.setOnClickListener {
+            createColorPickerDialog()
         }
     }
 
@@ -119,5 +135,16 @@ class TextEditorDialogFragment : DialogFragment() {
             fragment.show(appCompatActivity.supportFragmentManager, TAG)
             return fragment
         }
+    }
+
+    private fun createColorPickerDialog() {
+        createColorPickerDialog(
+            color = mColorCode,
+            onColorSelected = { _, color ->
+                mColorCode = color
+                mAddTextEditText?.setTextColor(color)
+                textColorIV?.setBackgroundColor(color)
+            }
+        )
     }
 }

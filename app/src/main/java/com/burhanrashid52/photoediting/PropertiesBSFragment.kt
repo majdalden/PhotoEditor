@@ -1,14 +1,17 @@
 package com.burhanrashid52.photoediting
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.SeekBar
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.burhanrashid52.photoediting.ColorPickerAdapter.OnColorPickerClickListener
+import com.burhanrashid52.photoediting.tools.createColorPickerDialog
 
 class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeListener {
     private var mProperties: Properties? = null
@@ -30,6 +33,7 @@ class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChang
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val rvColor: RecyclerView = view.findViewById(R.id.rvColors)
+        val propertiesColorsIV: ImageView = view.findViewById(R.id.propertiesColorsIV)
         val sbOpacity = view.findViewById<SeekBar>(R.id.sbOpacity)
         val sbBrushSize = view.findViewById<SeekBar>(R.id.sbSize)
         sbOpacity.setOnSeekBarChangeListener(this)
@@ -47,6 +51,10 @@ class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChang
             }
         })
         rvColor.adapter = colorPickerAdapter
+
+        propertiesColorsIV.setOnClickListener {
+            createColorPickerDialog()
+        }
     }
 
     fun setPropertiesChangeListener(properties: Properties?) {
@@ -66,4 +74,15 @@ class PropertiesBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChang
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {}
     override fun onStopTrackingTouch(seekBar: SeekBar) {}
+
+
+    private fun createColorPickerDialog() {
+        createColorPickerDialog(
+            color = Color.WHITE,
+            onColorSelected = { _, color ->
+                dismiss()
+                mProperties?.onColorChanged(color)
+            }
+        )
+    }
 }

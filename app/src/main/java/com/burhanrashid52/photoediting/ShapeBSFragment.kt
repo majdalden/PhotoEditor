@@ -1,9 +1,11 @@
 package com.burhanrashid52.photoediting
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -11,6 +13,7 @@ import ja.burhanrashid52.photoeditor.shape.ShapeType
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.burhanrashid52.photoediting.ColorPickerAdapter.OnColorPickerClickListener
+import com.burhanrashid52.photoediting.tools.createColorPickerDialog
 
 class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeListener {
     private var mProperties: Properties? = null
@@ -33,13 +36,14 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val rvColor: RecyclerView = view.findViewById(R.id.shapeColors)
+        val shapeColorsIV: ImageView = view.findViewById(R.id.shapeColorsIV)
         val sbOpacity = view.findViewById<SeekBar>(R.id.shapeOpacity)
         val sbBrushSize = view.findViewById<SeekBar>(R.id.shapeSize)
         val shapeGroup = view.findViewById<RadioGroup>(R.id.shapeRadioGroup)
 
         // shape picker
         shapeGroup.setOnCheckedChangeListener { _: RadioGroup?, checkedId: Int ->
-            when(checkedId) {
+            when (checkedId) {
                 R.id.lineRadioButton -> {
                     mProperties!!.onShapePicked(ShapeType.LINE)
                 }
@@ -61,7 +65,7 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         rvColor.layoutManager = layoutManager
         rvColor.setHasFixedSize(true)
-        val colorPickerAdapter = ColorPickerAdapter(activity!!)
+        val colorPickerAdapter = ColorPickerAdapter(requireActivity())
         colorPickerAdapter.setOnColorPickerClickListener(object : OnColorPickerClickListener {
             override fun onColorPickerClickListener(colorCode: Int) {
                 if (mProperties != null) {
@@ -71,6 +75,10 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
             }
         })
         rvColor.adapter = colorPickerAdapter
+
+        shapeColorsIV.setOnClickListener {
+            createColorPickerDialog()
+        }
     }
 
     fun setPropertiesChangeListener(properties: Properties?) {
@@ -90,4 +98,16 @@ class ShapeBSFragment : BottomSheetDialogFragment(), SeekBar.OnSeekBarChangeList
 
     override fun onStartTrackingTouch(seekBar: SeekBar) {}
     override fun onStopTrackingTouch(seekBar: SeekBar) {}
+
+    private fun createColorPickerDialog() {
+        createColorPickerDialog(
+            color = Color.WHITE,
+            onColorSelected = { _, color ->
+                if (mProperties != null) {
+                    dismiss()
+                    mProperties!!.onColorChanged(color)
+                }
+            }
+        )
+    }
 }
