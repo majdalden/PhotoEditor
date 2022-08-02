@@ -115,21 +115,21 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
         mPhotoEditor?.setOnPhotoEditorListener(this)
 
         //Set Image Dynamically
-        mPhotoEditorView?.source?.setImageResource(R.drawable.paris_tower)
-        if (mPhotoEditorView?.source?.drawable == null) {
-            mPhotoEditorView?.source?.setBackgroundColor(
-                ContextCompat.getColor(
-                    this,
-                    R.color.black
-                )
-            )
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                mPhotoEditorView?.source?.background = null
-            } else {
-                mPhotoEditorView?.source?.setBackgroundDrawable(null)
-            }
-        }
+////        mPhotoEditorView?.source?.setImageResource(R.drawable.paris_tower)
+//        if (mPhotoEditorView?.source?.drawable == null) {
+//            mPhotoEditorView?.source?.setBackgroundColor(
+//                ContextCompat.getColor(
+//                    this,
+//                    R.color.black
+//                )
+//            )
+//        } else {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+//                mPhotoEditorView?.source?.background = null
+//            } else {
+//                mPhotoEditorView?.source?.setBackgroundDrawable(null)
+//            }
+//        }
 
         mSaveFileHelper = FileSaveHelper(this)
     }
