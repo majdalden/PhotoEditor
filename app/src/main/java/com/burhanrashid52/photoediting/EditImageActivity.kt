@@ -16,7 +16,6 @@ import android.view.View
 import android.view.animation.AnticipateOvershootInterpolator
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import com.burhanrashid52.photoediting.base.BaseActivity
@@ -50,6 +49,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.Exception
 import androidx.annotation.RequiresPermission
+import com.bumptech.glide.Glide
 
 class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickListener,
     PropertiesBSFragment.Properties, ShapeBSFragment.Properties, EmojiListener, StickerListener,
@@ -170,8 +170,10 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onEditTextChangeListener(rootView: View?, text: String?, colorCode: Int) {
-        val textEditorDialogFragment = TextEditorDialogFragment.show(this, text.toString(), colorCode)
-        textEditorDialogFragment.setOnTextEditorListener (object : TextEditorDialogFragment.TextEditorListener {
+        val textEditorDialogFragment =
+            TextEditorDialogFragment.show(this, text.toString(), colorCode)
+        textEditorDialogFragment.setOnTextEditorListener(object :
+            TextEditorDialogFragment.TextEditorListener {
             override fun onDone(inputText: String?, colorCode: Int) {
                 val styleBuilder = TextStyleBuilder()
                 styleBuilder.withTextColor(colorCode)
@@ -184,11 +186,17 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onAddViewListener(viewType: ViewType?, numberOfAddedViews: Int) {
-        Log.d(TAG, "onAddViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]")
+        Log.d(
+            TAG,
+            "onAddViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
+        )
     }
 
     override fun onRemoveViewListener(viewType: ViewType?, numberOfAddedViews: Int) {
-        Log.d(TAG, "onRemoveViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]")
+        Log.d(
+            TAG,
+            "onRemoveViewListener() called with: viewType = [$viewType], numberOfAddedViews = [$numberOfAddedViews]"
+        )
     }
 
     override fun onStartViewChangeListener(viewType: ViewType?) {
@@ -256,7 +264,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             this,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         ) == PackageManager.PERMISSION_GRANTED
-        if (hasStoragePermission || FileSaveHelper.isSdkHigherThan28()) {
+        if (hasStoragePermission /*|| FileSaveHelper.isSdkHigherThan23()*/) {
             showLoading("Saving...")
             mSaveFileHelper?.createFile(fileName, object : FileSaveHelper.OnFileCreateResult {
 
@@ -317,11 +325,20 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
                 PICK_REQUEST -> try {
                     mPhotoEditor?.clearAllViews()
                     val uri = data?.data
-                    val bitmap = MediaStore.Images.Media.getBitmap(
+                    /*val bitmap = MediaStore.Images.Media.getBitmap(
                         contentResolver, uri
                     )
-                    mPhotoEditorView?.source?.setImageBitmap(bitmap)
+                    mPhotoEditorView?.source?.setImageBitmap(bitmap)*/
+//                    mPhotoEditorView?.source?.setImageURI(uri)
+                    mPhotoEditorView?.source ?: return
+                    mPhotoEditorView?.source?.let {
+                        Glide.with(this).load(uri).into(it)
+                    }
                 } catch (e: IOException) {
+                    e.printStackTrace()
+                } catch (e: RuntimeException) {
+                    e.printStackTrace()
+                } catch (e: Throwable) {
                     e.printStackTrace()
                 }
             }
@@ -389,7 +406,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             }
             ToolType.TEXT -> {
                 val textEditorDialogFragment = TextEditorDialogFragment.show(this)
-                textEditorDialogFragment.setOnTextEditorListener(object : TextEditorDialogFragment.TextEditorListener {
+                textEditorDialogFragment.setOnTextEditorListener(object :
+                    TextEditorDialogFragment.TextEditorListener {
                     override fun onDone(inputText: String?, colorCode: Int) {
                         val styleBuilder = TextStyleBuilder()
                         styleBuilder.withTextColor(colorCode)
@@ -421,7 +439,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     private fun showFilter(isVisible: Boolean) {
         mIsFilterVisible = isVisible
         mConstraintSet.clone(mRootView)
-        val rvFilterId: Int = mRvFilters?.id ?: throw IllegalArgumentException("RV Filter ID Expected")
+        val rvFilterId: Int =
+            mRvFilters?.id ?: throw IllegalArgumentException("RV Filter ID Expected")
         if (isVisible) {
             mConstraintSet.clear(rvFilterId, ConstraintSet.START)
             mConstraintSet.connect(
@@ -447,7 +466,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
     }
 
     override fun onBackPressed() {
-        val isCacheEmpty = mPhotoEditor?.isCacheEmpty ?: throw IllegalArgumentException("isCacheEmpty Expected")
+        val isCacheEmpty =
+            mPhotoEditor?.isCacheEmpty ?: throw IllegalArgumentException("isCacheEmpty Expected")
 
         if (mIsFilterVisible) {
             showFilter(false)

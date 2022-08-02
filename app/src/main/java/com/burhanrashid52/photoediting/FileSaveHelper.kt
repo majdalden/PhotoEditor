@@ -173,7 +173,11 @@ class FileSaveHelper(private val mContentResolver: ContentResolver) : LifecycleO
 
     companion object {
         fun isSdkHigherThan28(): Boolean {
-            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+        }
+
+        fun isSdkHigherThan23(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
         }
     }
 

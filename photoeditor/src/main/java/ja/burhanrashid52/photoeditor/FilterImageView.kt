@@ -90,6 +90,10 @@ internal class FilterImageView @JvmOverloads constructor(
 
     val bitmap: Bitmap?
         get() = if (drawable is BitmapDrawable) {
-            (drawable as BitmapDrawable).bitmap
+            try {
+                (drawable as? BitmapDrawable?)?.bitmap
+            } catch (e: Throwable) {
+                null
+            }
         } else null
 }
