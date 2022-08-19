@@ -128,7 +128,7 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
 
     private fun handleIntentImage(source: ImageView?) {
         if (intent == null) {
-            return;
+            return
         }
 
         when (intent.action) {
@@ -249,7 +249,8 @@ class EditImageActivity : BaseActivity(), OnPhotoEditorListener, View.OnClickLis
             showSnackbar(getString(R.string.msg_save_image_to_share))
             return
         }
-        intent.putExtra(Intent.EXTRA_STREAM, buildFileProviderUri(saveImageUri))
+        val newUri = buildFileProviderUri(saveImageUri)
+        intent.putExtra(Intent.EXTRA_STREAM, newUri)
         startActivity(Intent.createChooser(intent, getString(R.string.msg_share_image)))
     }
 
